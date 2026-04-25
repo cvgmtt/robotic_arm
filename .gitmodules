@@ -1,0 +1,9 @@
+[submodule "src/ros2_robotiq_gripper"]
+	path = src/ros2_robotiq_gripper
+	url = https://github.com/PickNikRobotics/ros2_robotiq_gripper
+[submodule "src/Universal_Robots_ROS2_Description"]
+	path = src/Universal_Robots_ROS2_Description
+	url = https://github.com/UniversalRobots/Universal_Robots_ROS2_Description
+[submodule "src/serial"]
+	path = src/serial
+	url = https://github.com/ZhaoXiangBox/serial
