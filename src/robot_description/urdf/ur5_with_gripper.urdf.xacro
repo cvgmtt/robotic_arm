@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur5_con_robotiq">
+
+    <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+    
+    <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro"/>
+
+
+    <link name="world"/>
+
+    <xacro:ur_robot
+        name="my_ur5"
+        tf_prefix=""
+        parent="world"
+        joint_limits_parameters_file="$(find ur_description)/config/ur5e/joint_limits.yaml"
+        kinematics_parameters_file="$(find ur_description)/config/ur5e/default_kinematics.yaml"
+        physical_parameters_file="$(find ur_description)/config/ur5e/physical_parameters.yaml"
+        visual_parameters_file="$(find ur_description)/config/ur5e/visual_parameters.yaml">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:ur_robot>
+
+    <xacro:robotiq_gripper name="RobotiqGripperHardwareInterface" prefix="gripper_" parent="tool0" use_fake_hardware="true">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:robotiq_gripper>
+
+    <ros2_control name="GazeboSimSystem" type="system">
+    <hardware>
+      <plugin>ign_ros2_control/IgnitionSystem</plugin>
+    </hardware>
+
+    <joint name="shoulder_pan_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="shoulder_lift_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="elbow_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wrist_1_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wrist_2_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wrist_3_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+
+    <joint name="robotiq_85_left_knuckle_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    </ros2_control>
+    
+    <gazebo>
+        <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
+        <robot_param>robot_description</robot_param>
+        <robot_param_node>robot_state_publisher</robot_param_node>
+        <parameters>$(find gazebo_sim)/config/controllers_description.YAML</parameters>
+        </plugin>
+    </gazebo>
+
+</robot>

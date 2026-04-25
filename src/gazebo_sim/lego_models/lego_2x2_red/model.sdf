@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="lego_2x2_red">
+    <static>false</static>
+    <link name="link">
+      <inertial>
+        <mass>0.008000</mass>
+        <inertia>
+          <ixx>0.000001</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>0.000001</iyy><iyz>0</iyz>
+          <izz>0.000001</izz>
+        </inertia>
+      </inertial>
+      <visual name="body">
+        <pose>0 0 0.004800 0 0 0</pose>
+        <geometry><box><size>0.016000 0.016000 0.009600</size></box></geometry>
+        <material>
+          <ambient>0.85 0.1 0.1 1</ambient>
+          <diffuse>0.85 0.1 0.1 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+      <collision name="body_col">
+        <pose>0 0 0.004800 0 0 0</pose>
+        <geometry><box><size>0.016000 0.016000 0.009600</size></box></geometry>
+        <surface><friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction></surface>
+      </collision>
+      <visual name="stud_0_0">
+        <pose>-0.004000 -0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+        <material>
+          <ambient>0.85 0.1 0.1 1</ambient>
+          <diffuse>0.85 0.1 0.1 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+      <collision name="stud_col_0_0">
+        <pose>-0.004000 -0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+      </collision>
+      <visual name="stud_0_1">
+        <pose>-0.004000 0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+        <material>
+          <ambient>0.85 0.1 0.1 1</ambient>
+          <diffuse>0.85 0.1 0.1 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+      <collision name="stud_col_0_1">
+        <pose>-0.004000 0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+      </collision>
+      <visual name="stud_1_0">
+        <pose>0.004000 -0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+        <material>
+          <ambient>0.85 0.1 0.1 1</ambient>
+          <diffuse>0.85 0.1 0.1 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+      <collision name="stud_col_1_0">
+        <pose>0.004000 -0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+      </collision>
+      <visual name="stud_1_1">
+        <pose>0.004000 0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+        <material>
+          <ambient>0.85 0.1 0.1 1</ambient>
+          <diffuse>0.85 0.1 0.1 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+      <collision name="stud_col_1_1">
+        <pose>0.004000 0.004000 0.010500 0 0 0</pose>
+        <geometry><cylinder><radius>0.0024</radius><length>0.0018</length></cylinder></geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>
