@@ -134,6 +134,13 @@ def generate_launch_description():
     #     output='screen'
     # )
 
+    lego_finder = Node(
+        package = 'lego_finder',
+        executable= 'lego_finder',
+        name= 'lego_finder',
+        output='screen'
+    )
+
     return LaunchDescription([
         robot_state_publisher,
         imposta_percorsi_gazebo,
@@ -142,5 +149,6 @@ def generate_launch_description():
         nodo_spawn_camera,
         nodo_static_tf_camera,
         #nodo_bridge
-        delayed_controller_spawner
+        delayed_controller_spawner,
+        lego_finder
     ])

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(lego_finder)
+project(interfaces)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,20 +7,17 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(interfaces REQUIRED)
-find_package(message_filters REQUIRED)
 
-add_executable(lego_finder src/lego_finder.cpp)
-ament_target_dependencies(lego_finder rclcpp geometry_msgs sensor_msgs interfaces message_filters)
-target_include_directories(lego_finder PUBLIC include )
+find_package(rosidl_default_generators REQUIRED)
 
-install(TARGETS
-  lego_finder
-  DESTINATION lib/${PROJECT_NAME})
-
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/Poses.srv"
+  DEPENDENCIES geometry_msgs
+)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

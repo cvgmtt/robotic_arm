@@ -1,0 +1,5 @@
+# --- REQUEST ---
+---
+# --- RESPONSE ---
+geometry_msgs/PoseArray lego_poses
+bool success
