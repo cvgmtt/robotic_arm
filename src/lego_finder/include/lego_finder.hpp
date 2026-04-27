@@ -14,21 +14,18 @@ using std::placeholders::_2;
 class LegoFinder: public rclcpp::Node{
     private:
         rclcpp::Service<interfaces::srv::Poses>::SharedPtr service;
-        rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_receiver;
-        rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr depth_receiver;
+        message_filters::Subscription<sensor_msgs::msg::Image>::SharedPtr image_receiver;
+        message_filters::Subscription<sensor_msgs::msg::Image>::SharedPtr depth_receiver;
         //rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr intrinsics_receiver;
 
-
+        typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> SyncPolicy;
+        std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync;
         sensor_msgs::msg::Image::ConstSharedPtr latest_image;
+        sensor_msgs::msg::Image::ConstSharedPtr latest_depth;
+
         std::mutex image_mutex_;
     public:
-        LegoFinder(): Node("lego_finder"){
-            image_receiver = this->create_subscription<sensor_msgs::msg::Image>("/rgbd_camera/image", 10, std::bind(&LegoFinder::sub_callback, this, _1));
-            depth_receiver = this->create_subscription<sensor_msgs::msg::Image>("/rgbd_camera/depth_image", 10, std::bind(&LegoFinder::sub_callback, this, _1));
-
-
-            service = this->create_service<interfaces::srv::Poses>("get_legos", std::bind(&LegoFinder::service_callback, this, _1, _2));
-        }
+        LegoFinder();
 
         void sub_callback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
         void service_callback(const std::shared_ptr<interfaces::srv::Poses::Request> request,
