@@ -35,7 +35,7 @@ def generate_launch_description():
     pkg_mio_gazebo = FindPackageShare('gazebo_sim')
     world_file = os.path.join(pkg_mio_gazebo.find('gazebo_sim'), 'worlds', 'table_scene.sdf')
     
-    # --- IL TRUCCO "BLINDATO" PER IGNITION FORTRESS ---
+    # --- IL TRUCCO "BLINDATO" PER IGNITION FORTRESS ---x
     # Saliamo di un livello (dirname) dalla cartella share per far vedere a Gazebo tutto il pacchetto
     percorso_ur = os.path.dirname(get_package_share_directory('ur_description'))
     percorso_robotiq = os.path.dirname(get_package_share_directory('robotiq_description'))
@@ -138,7 +138,10 @@ def generate_launch_description():
         package = 'lego_finder',
         executable= 'lego_finder',
         name= 'lego_finder',
-        output='screen'
+        output='screen',
+        parameters=[
+            {'use_sim_time': True},
+        ]
     )
 
     return LaunchDescription([
