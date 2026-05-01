@@ -14,6 +14,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/synchronizer.h>
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h> //modulo per l'inference
+#include <chrono>
 
 using std::placeholders::_1; 
 using std::placeholders::_2;
@@ -33,6 +34,9 @@ class LegoFinder: public rclcpp::Node{
         std::unique_ptr<Ort::Env> env;
         std::unique_ptr<Ort::Session> session;
 
+        enum colorClasses{
+            RED, GREEN, BLUE, YELLOW, WHITE, SCONOSCIUTO
+        };
 
         std::mutex image_mutex_;
     public:
@@ -41,6 +45,7 @@ class LegoFinder: public rclcpp::Node{
         void sub_callback(const sensor_msgs::msg::Image::ConstSharedPtr image, const sensor_msgs::msg::Image::ConstSharedPtr depth);
         void service_callback(const std::shared_ptr<interfaces::srv::Poses::Request> request,
                                 std::shared_ptr<interfaces::srv::Poses::Response> response);
+        int detectColor(int b, int g, int r); 
 };
 
 

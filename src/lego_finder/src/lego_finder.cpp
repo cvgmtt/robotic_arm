@@ -18,6 +18,44 @@ LegoFinder::LegoFinder(): Node("lego_finder"){
     session = std::make_unique<Ort::Session>(*env, model_path.c_str(), session_options);
 }
 
+
+int LegoFinder::detectColor(int b, int g, int r) {
+    // 1. Identifica il Bianco: tutti i canali sono alti e vicini tra loro
+    RCLCPP_INFO(this->get_logger(), "dentro la funzione");
+
+    if (b > 180 && g > 180 && r > 180) {
+        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
+        return 4;
+    }
+
+    // 2. Logica per colori primari basata sulla predominanza
+    // Rosso: R è nettamente superiore a G e B
+    if (r > g * 1.5 && r > b * 1.5) {
+        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
+        return 2;
+    }
+
+    // Blu: B è nettamente superiore a R e G
+    if (b > r * 1.5 && b > g * 1.5) {
+        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
+        return 0;
+    }
+
+    // Verde: G è nettamente superiore a R e B
+    if (g > r * 1.2 && g > b * 1.2) {
+        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
+        return 1;
+    }
+
+    // Giallo: R e G sono entrambi alti, B è basso
+    if (r > 150 && g > 150 && b < 100) {
+        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
+        return 3;
+    }
+    RCLCPP_INFO(this->get_logger(), "dentro la funzione");
+    return 5;
+}
+
 void LegoFinder::sub_callback(const sensor_msgs::msg::Image::ConstSharedPtr image, const sensor_msgs::msg::Image::ConstSharedPtr depth){
     std::lock_guard<std::mutex> lock(image_mutex_);
     latest_image = image;
@@ -38,19 +76,21 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
         image_to_process = latest_image;
     }
 
-    cv::Mat cv_image = cv_bridge::toCvCopy(image_to_process, "bgr8")->image;
-    
-    // 1. DA BGR A RGB (YOLO vuole RGB)
-    cv::Mat rgb_image;
-    cv::cvtColor(cv_image, rgb_image, cv::COLOR_BGR2RGB);
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration;
+    auto start_preprocess = high_resolution_clock::now();
 
-    // 2. CREIAMO IL BLOB MAGICO
-    // blobFromImage si occupa di:
-    // - Ridimensionare a 640x640
-    // - Dividere per 255.0 (normalizzazione)
-    // - Convertire da HWC a CHW
-    // - Gestire la memoria in modo continuo
-    cv::Mat blob = cv::dnn::blobFromImage(rgb_image, 1.0/255.0, cv::Size(640, 640), cv::Scalar(), true, false);
+    cv::Mat cv_image = cv_bridge::toCvCopy(image_to_process, "bgr8")->image;
+
+    // crop della fascia grigia
+    cv::Mat cropped = cv_image(cv::Rect(230, 0, cv_image.cols - 230, cv_image.rows));
+
+    // blob - swapRB=true per convertire BGR→RGB che vuole YOLO
+    cv::Mat blob = cv::dnn::blobFromImage(cropped, 1.0/255.0, cv::Size(640, 640), cv::Scalar(), true, false);
+
+    //creiamo il vettore per salvare le classi di colori
+    std::vector<int>color_id;
+
 
     // 3. PREPARIAMO IL TENSORE PER ONNX
     std::vector<int64_t> input_shape = {1, 3, 640, 640};
@@ -67,6 +107,8 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
         input_shape.size()
     );
 
+    auto end_preprocess = high_resolution_clock::now();
+
     // --- inferenza ---
     const char* input_names[] = {"images"};
     const char* output_names[] = {"output0"};
@@ -75,6 +117,8 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
         input_names, &input_tensor, 1,
         output_names, 1
     );
+
+    auto end_inference = high_resolution_clock::now();
 
     // --- parsing output YOLO: shape [1, 5+num_classes, 8400] ---
     float* raw = outputs[0].GetTensorMutableData<float>();
@@ -85,6 +129,8 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
     std::vector<cv::Rect> boxes;
     std::vector<float> confidences;
     std::vector<int> class_ids;
+    std::vector<std::vector<int>> center_coordinates;
+
     float conf_threshold = 0.25f;
 
     for (int i = 0; i < num_predictions; i++) {
@@ -105,47 +151,81 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
             }
         }
 
-        if (max_score > conf_threshold) {
-            // scala da 640x640 alle dimensioni reali
-            float scale_x = (float)cv_image.cols / 640.0f;
-            float scale_y = (float)cv_image.rows / 640.0f;
-            int x = (int)((cx - w / 2.0f) * scale_x);
-            int y = (int)((cy - h / 2.0f) * scale_y);
-            int bw = (int)(w * scale_x);
-            int bh = (int)(h * scale_y);
-
-            boxes.push_back(cv::Rect(x, y, bw, bh));
-            confidences.push_back(max_score);
-            class_ids.push_back(best_class);
+            if (max_score > conf_threshold) {
+                // scala da 640x640 alle dimensioni reali
+                float scale_x = (float)cropped.cols / 640.0f;
+                float scale_y = (float)cropped.rows / 640.0f;
+                int x = (int)((cx - w / 2.0f) * scale_x);
+                int y = (int)((cy - h / 2.0f) * scale_y);
+                int bw = (int)(w * scale_x);
+                int bh = (int)(h * scale_y);
+                boxes.push_back(cv::Rect(x, y, bw, bh));
+                std::vector<int> temp_vect;
+                temp_vect.push_back(static_cast<int>(cx * scale_x));
+                temp_vect.push_back(static_cast<int>(cy * scale_y));
+                center_coordinates.push_back(temp_vect);
+                confidences.push_back(max_score);
+                class_ids.push_back(best_class);
+            }
         }
-    }
 
     // --- NMS ---
     std::vector<int> indices;
     cv::dnn::NMSBoxes(boxes, confidences, conf_threshold, 0.4f, indices);
+    
+    
+    //color matching:
+    for(int idx : indices){
 
+        int px = center_coordinates[idx][0];
+        int py = center_coordinates[idx][1];
+        cv::Vec3b pixel = cropped.at<cv::Vec3b>(py, px);
+        int blue = pixel[0];
+        int green = pixel[1];
+        int red = pixel[2];
+        RCLCPP_INFO(this->get_logger(), "prendo pixel");        
+        color_id.push_back(detectColor(blue, green, red));
+        RCLCPP_INFO(this->get_logger(), "pixel preso");
+    }
+    int counter = 0;
     for (int idx : indices) {
         RCLCPP_INFO(this->get_logger(),
-            "Lego classe %d | pixel X:%d Y:%d W:%d H:%d | conf %.2f",
+            "Lego classe %d | pixsrc/lego_finder/third_party/el X:%d Y:%d W:%d H:%d Color: %d | conf %.2f",
             class_ids[idx], boxes[idx].x, boxes[idx].y,
-            boxes[idx].width, boxes[idx].height, confidences[idx]);
+            boxes[idx].width, boxes[idx].height, color_id[counter], confidences[counter]);
+            counter++;
     }
     for (int idx : indices) {
-    cv::rectangle(cv_image, boxes[idx], cv::Scalar(0, 255, 0), 2);
+    cv::rectangle(cropped, boxes[idx], cv::Scalar(0, 255, 0), 2);
     
     std::string label = "Classe " + std::to_string(class_ids[idx]) 
-                      + " " + std::to_string((int)(confidences[idx] * 100)) + "%";
-    
-    cv::putText(cv_image, label,
-        cv::Point(boxes[idx].x, boxes[idx].y - 10),
-        cv::FONT_HERSHEY_SIMPLEX, 0.5,
-        cv::Scalar(0, 255, 0), 1);
-    }
+                      + " " + std::to_string((int)(confidences[idx] * 100));
 
-    cv::imwrite("/tmp/lego_debug.png", cv_image);
+    
+    // cv::putText(cv_image, label,
+    //     cv::Point(boxes[idx].x, boxes[idx].y - 10),
+    //     cv::FONT_HERSHEY_SIMPLEX, 0.5,
+    //     cv::Scalar(0, 255, 0), 1);
+    // 
+    }
+    auto end_postprocess = high_resolution_clock::now();
+
+    cv::imwrite("/tmp/lego_debug.png", cropped);
+
+    duration<double, std::milli> time_preprocess = end_preprocess - start_preprocess;
+    duration<double, std::milli> time_inference = end_inference - end_preprocess;
+    duration<double, std::milli> time_postprocess = end_postprocess - end_inference;
+    duration<double, std::milli> time_total = end_postprocess - start_preprocess;
+
+    // Stampiamo a schermo nel formato stile Python!
+    RCLCPP_INFO(this->get_logger(), 
+        "Speed: %.2fms preprocess, %.2fms inference, %.2fms postprocess per image (Totale: %.2fms)",
+        time_preprocess.count(), time_inference.count(), time_postprocess.count(), time_total.count());
+
 
     response->success = true;
 }
+
 
 
 int main(int argc, char **argv){
