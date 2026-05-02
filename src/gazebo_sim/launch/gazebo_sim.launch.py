@@ -75,7 +75,8 @@ def generate_launch_description():
         executable='parameter_bridge',
         arguments=['/rgbd_camera/image@sensor_msgs/msg/Image[ignition.msgs.Image',
             '/rgbd_camera/depth_image@sensor_msgs/msg/Image[ignition.msgs.Image',
-            '/rgbd_camera/points@sensor_msgs/msg/PointCloud2[ignition.msgs.PointCloudPacked'
+            '/rgbd_camera/points@sensor_msgs/msg/PointCloud2[ignition.msgs.PointCloudPacked',
+            '/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo'
         ],
         output='screen'
     )

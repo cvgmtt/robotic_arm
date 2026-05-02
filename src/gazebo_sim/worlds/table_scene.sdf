@@ -1591,6 +1591,8 @@
           <update_rate>30</update_rate>
           <visualize>true</visualize>
           <topic>rgbd_camera</topic>
+          <enable_metrics>true</enable_metrics>
+          <camera_info_topic>rgbd_camera/camera_info</camera_info_topic>
         </sensor>
         <pose>0 0 0 0 -0 0</pose>
         <inertial>

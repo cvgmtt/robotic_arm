@@ -16,11 +16,12 @@ find_package(interfaces REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(tf2 REQUIRED)
 
 add_executable(lego_finder src/lego_finder.cpp)
 
 ament_target_dependencies(lego_finder 
-  rclcpp geometry_msgs sensor_msgs interfaces message_filters cv_bridge)
+  rclcpp geometry_msgs sensor_msgs interfaces message_filters cv_bridge tf2)
 
 target_include_directories(lego_finder PUBLIC 
   include

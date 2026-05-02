@@ -14,7 +14,7 @@
   <depend>interfaces</depend>
   <depend>message_filters</depend>
   <depend>onnxruntime</depend>
-
+  <depend>tf2</depend>
   
 
 

@@ -3,6 +3,9 @@
 LegoFinder::LegoFinder(): Node("lego_finder"){
     image_receiver.subscribe(this, "/rgbd_camera/image", rmw_qos_profile_sensor_data);
     depth_receiver.subscribe(this, "/rgbd_camera/depth_image", rmw_qos_profile_sensor_data);
+    intrinsics_receiver = this->create_subscription<sensor_msgs::msg::CameraInfo>("/rgbd_camera/camera_info", rclcpp::SensorDataQoS(), 
+        std::bind(&LegoFinder::intrinsics_callback, this, _1));
+
     sync = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(SyncPolicy(10), image_receiver, depth_receiver);
     sync->registerCallback(std::bind(&LegoFinder::sub_callback, this, _1, _2));
 
@@ -21,46 +24,94 @@ LegoFinder::LegoFinder(): Node("lego_finder"){
 
 int LegoFinder::detectColor(int b, int g, int r) {
     // 1. Identifica il Bianco: tutti i canali sono alti e vicini tra loro
-    RCLCPP_INFO(this->get_logger(), "dentro la funzione");
 
     if (b > 180 && g > 180 && r > 180) {
-        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
         return 4;
     }
 
     // 2. Logica per colori primari basata sulla predominanza
     // Rosso: R è nettamente superiore a G e B
     if (r > g * 1.5 && r > b * 1.5) {
-        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
         return 2;
     }
 
     // Blu: B è nettamente superiore a R e G
     if (b > r * 1.5 && b > g * 1.5) {
-        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
         return 0;
     }
 
     // Verde: G è nettamente superiore a R e B
     if (g > r * 1.2 && g > b * 1.2) {
-        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
         return 1;
     }
 
     // Giallo: R e G sono entrambi alti, B è basso
     if (r > 150 && g > 150 && b < 100) {
-        RCLCPP_INFO(this->get_logger(), "dentro la funzione");
         return 3;
     }
-    RCLCPP_INFO(this->get_logger(), "dentro la funzione");
     return 5;
 }
+
+    geometry_msgs::msg::Pose LegoFinder::findPose(int &px, int &py, const int &crop_value){
+        cv::Mat depth_image;
+        geometry_msgs::msg::Pose p;
+        try {
+            depth_image = cv_bridge::toCvCopy(latest_depth, sensor_msgs::image_encodings::TYPE_32FC1)->image;
+        } catch (cv_bridge::Exception& e) {
+            RCLCPP_ERROR(this->get_logger(), "Errore cv_bridge (Depth): %s", e.what());
+            return p;
+        }
+        RCLCPP_INFO(this->get_logger(), "nella funzione");
+
+        int px_original = px + crop_value;
+        int py_original = py;
+
+        double Z = depth_image.at<float>(py_original, px_original);
+
+        if (std::isnan(Z) || std::isinf(Z) || Z <= 0.0) {
+            RCLCPP_WARN(this->get_logger(), "Profondità non valida (Z=%f) al pixel (%d, %d)", Z, px_original, py_original);
+            return p;  //scarta la posa vuota nel servizio)
+        }
+        double X = ((double) px_original - cx_cam) * Z/fx;
+        double Y = ((double) py_original - cy_cam) * Z/fy;
+
+        p.position.x = X;
+        p.position.y = Y;
+        p.position.z = Z;
+
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, 0.0);
+
+        p.orientation.x = q.x();
+        p.orientation.y = q.y();
+        p.orientation.z = q.z();
+        p.orientation.w = q.w();
+
+
+        RCLCPP_INFO(this->get_logger(), "posizione di x: %f", p.position.x);
+        return p;
+
+    }
+
 
 void LegoFinder::sub_callback(const sensor_msgs::msg::Image::ConstSharedPtr image, const sensor_msgs::msg::Image::ConstSharedPtr depth){
     std::lock_guard<std::mutex> lock(image_mutex_);
     latest_image = image;
-    latest_depth = depth;    
-    RCLCPP_INFO(this->get_logger(), "Immagine ricevuta! Altezza: %d", latest_image->height);
+    latest_depth = depth;   
+}
+
+void LegoFinder::intrinsics_callback(sensor_msgs::msg::CameraInfo::ConstSharedPtr msg){
+    if(intrinsics_received){
+        return;
+    }
+    fx = msg->k[0] * 2.0;       
+    cx_cam = msg->k[2] * 2.0;   
+    fy = msg->k[4] * 2.0;       
+    cy_cam = msg->k[5] * 2.0;   
+
+    intrinsics_received = true;
+    RCLCPP_INFO(this->get_logger(), "Intrinsics Ricevuti! fx:%.1f, fy:%.1f, cx:%.1f, cy:%.1f", fx, fy, cx_cam, cy_cam);
+    return;
 }
 
 void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::Request> request, std::shared_ptr<interfaces::srv::Poses::Response> response) {
@@ -83,7 +134,8 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
     cv::Mat cv_image = cv_bridge::toCvCopy(image_to_process, "bgr8")->image;
 
     // crop della fascia grigia
-    cv::Mat cropped = cv_image(cv::Rect(230, 0, cv_image.cols - 230, cv_image.rows));
+    const int crop_value = 230;
+    cv::Mat cropped = cv_image(cv::Rect(230, 0, cv_image.cols - crop_value, cv_image.rows));
 
     // blob - swapRB=true per convertire BGR→RGB che vuole YOLO
     cv::Mat blob = cv::dnn::blobFromImage(cropped, 1.0/255.0, cv::Size(640, 640), cv::Scalar(), true, false);
@@ -129,7 +181,8 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
     std::vector<cv::Rect> boxes;
     std::vector<float> confidences;
     std::vector<int> class_ids;
-    std::vector<std::vector<int>> center_coordinates;
+    std::vector<std::vector<int>> pixel_coordinates;
+
 
     float conf_threshold = 0.25f;
 
@@ -163,7 +216,7 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
                 std::vector<int> temp_vect;
                 temp_vect.push_back(static_cast<int>(cx * scale_x));
                 temp_vect.push_back(static_cast<int>(cy * scale_y));
-                center_coordinates.push_back(temp_vect);
+                pixel_coordinates.push_back(temp_vect);
                 confidences.push_back(max_score);
                 class_ids.push_back(best_class);
             }
@@ -177,15 +230,17 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
     //color matching:
     for(int idx : indices){
 
-        int px = center_coordinates[idx][0];
-        int py = center_coordinates[idx][1];
+        int px = pixel_coordinates[idx][0];
+        int py = pixel_coordinates[idx][1];
         cv::Vec3b pixel = cropped.at<cv::Vec3b>(py, px);
         int blue = pixel[0];
         int green = pixel[1];
         int red = pixel[2];
-        RCLCPP_INFO(this->get_logger(), "prendo pixel");        
         color_id.push_back(detectColor(blue, green, red));
-        RCLCPP_INFO(this->get_logger(), "pixel preso");
+
+        lego_poses.header.stamp = this->get_clock()->now(); // timestamp of creation of the msg
+        lego_poses.header.frame_id = "map"; // frame id in which the array is published
+        lego_poses.poses.push_back(findPose(px, py, crop_value));
     }
     int counter = 0;
     for (int idx : indices) {
@@ -224,6 +279,8 @@ void LegoFinder::service_callback(const std::shared_ptr<interfaces::srv::Poses::
 
 
     response->success = true;
+    response->lego_poses = lego_poses;
+    response->color_ids = color_id;
 }
 
 
