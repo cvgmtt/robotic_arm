@@ -10,8 +10,10 @@ from launch.actions import RegisterEventHandler
 from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
+from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
+    pkg_path = get_package_share_directory('gazebo_sim')
 
     # 1. PREPARO IL ROBOT
     pkg_robot_description = FindPackageShare('robot_description')
@@ -42,8 +44,7 @@ def generate_launch_description():
     percorso_lego = os.path.join(get_package_share_directory('gazebo_sim'), 'lego_models')
 
     # Unisco i percorsi
-    percorsi_modelli = f"{percorso_ur}:{percorso_robotiq}:{percorso_lego}"
-
+    percorsi_modelli = f"{pkg_path}:{percorso_ur}:{percorso_robotiq}:{percorso_lego}"
     # Uso IGN_ (Ignition) e non GZ_
     imposta_percorsi_gazebo = SetEnvironmentVariable(
         name='IGN_GAZEBO_RESOURCE_PATH',

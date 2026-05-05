@@ -104,6 +104,36 @@
       <pose>0.689422 -0.532975 0 0 -0 0</pose>
       <self_collide>false</self_collide>
     </model>
+    <include>
+      <uri>model://models/underbin_bench</uri>
+      <name>underbin_bench</name>
+      <pose>0.162367 -0.864988 0.636012 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>model://models/bin_red</uri>
+      <name>bin_red</name>
+      <pose>0.233854 -0.99784 0.713556 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>model://models/bin_green</uri>
+      <name>bin_green</name>
+      <pose>0.26088 -0.778593 0.708401 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>model://models/bin_blue</uri>
+      <name>bin_blue</name>
+      <pose>0.256463 -0.54652 0.702335 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>model://models/bin_yellow</uri>
+      <name>bin_yellow</name>
+      <pose>0.266331 -0.328466 0.71476 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>model://models/bin_white</uri>
+      <name>bin_white</name>
+      <pose>0.293498 -0.093944 0.70429 0 -0 0</pose>
+    </include>
     <model name='lego_2x4_white'>
       <static>false</static>
       <link name='link'>
@@ -393,7 +423,7 @@
         <pose>0 0 0 0 -0 0</pose>
         <enable_wind>false</enable_wind>
       </link>
-      <pose>0.838095 -0.181716 0.745001 0 -0 0</pose>
+      <pose>0.506689 -0.181716 0.745001 0 -0 0</pose>
       <self_collide>false</self_collide>
     </model>
     <model name='lego_2x4_red'>
@@ -685,7 +715,7 @@
         <pose>0 0 0 0 -0 0</pose>
         <enable_wind>false</enable_wind>
       </link>
-      <pose>0.87049 -0.282278 0.73742 0 -0 0</pose>
+      <pose>0.524384 -0.282278 0.73742 0 -0 0</pose>
       <self_collide>false</self_collide>
     </model>
     <model name='lego_2x4_yellow'>
@@ -977,7 +1007,7 @@
         <pose>0 0 0 0 -0 0</pose>
         <enable_wind>false</enable_wind>
       </link>
-      <pose>0.753037 -0.305647 0.753093 0 -0 0</pose>
+      <pose>0.448605 -0.305647 0.753093 0 -0 0</pose>
       <self_collide>false</self_collide>
     </model>
     <model name='lego_2x4_green'>
@@ -1269,7 +1299,7 @@
         <pose>0 0 0 0 -0 0</pose>
         <enable_wind>false</enable_wind>
       </link>
-      <pose>0.750877 -0.182155 0.776123 0 -0 0</pose>
+      <pose>0.45411 -0.182155 0.776123 0 -0 0</pose>
       <self_collide>false</self_collide>
     </model>
     <model name='lego_2x4_blue'>
@@ -1561,11 +1591,11 @@
         <pose>0 0 0 0 -0 0</pose>
         <enable_wind>false</enable_wind>
       </link>
-      <pose>0.733049 -0.233816 0.731093 0 -0 0</pose>
+      <pose>0.507517 -0.233816 0.731093 0 -0 0</pose>
       <self_collide>false</self_collide>
     </model>
     <model name='static_rgbd_camera'>
-      <pose>0.863022 -0.330524 1.39699 3.14159 1.53339 1.57159</pose>
+      <pose>0.706379 -0.330648 1.39699 3.14159 1.53339 1.57159</pose>
       <static>true</static>
       <link name='camera_link'>
         <visual name='visual'>

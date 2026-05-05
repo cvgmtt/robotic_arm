@@ -13,6 +13,7 @@ install(DIRECTORY
   worlds
   launch
   lego_models
+  models
   config
   DESTINATION share/${PROJECT_NAME}
 )
